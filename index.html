@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>كوتش الحديد</title>
+<meta name="description" content="برنامج الجيم بتاعك: جدول التمرين، خريطة العضلات، وتحليل InBody">
+<meta name="theme-color" content="#1F5FBF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="كوتش الحديد">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+<div id="auth" hidden></div>
+<div id="app" dir="rtl" lang="ar">
+ <div id="shell" hidden>
+  <header class="top">
+    <div class="brand">
+      <div class="logo"><div class="plate">20</div><div><h1>كوتش الحديد</h1><div class="sync" id="sync"></div></div></div>
+      <button class="userbtn" id="acctBtn" type="button"><span aria-hidden="true">●</span><span id="who" dir="ltr"></span></button>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="today" aria-selected="true">تمرين النهارده</button>
+      <button role="tab" data-tab="plan">البرنامج</button>
+      <button role="tab" data-tab="lib">مكتبة التمارين</button>
+      <button role="tab" data-tab="prog">التقدّم</button>
+      <button role="tab" data-tab="me">بياناتي و InBody</button>
+    </nav>
+  </header>
+  <main id="view"></main>
+ </div>
+ <div id="session" hidden role="dialog" aria-label="التمرين"><div id="sessBody"></div></div>
+ <dialog id="dlg"><div class="modal" id="dlgBody"></div></dialog>
+</div>
+<div id="toast" hidden role="status"></div>
+<script src="config.js"></script>
+<script src="vendor/supabase.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
