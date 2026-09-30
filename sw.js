@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION on every deploy.
-const VERSION="ironcoach-v8";
+const VERSION="ironcoach-v9";
 const BASE=self.registration.scope; // works at "/" (Netlify) and "/ironcoach/" (GitHub Pages)
 const SHELL=["","style.css","app.js","config.js","vendor/supabase.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"].map(p=>new URL(p,BASE).href);
 self.addEventListener("install",e=>{

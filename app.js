@@ -490,7 +490,7 @@ function vMe(){
   <div class="panel"><div class="row between"><h2>${editing?"قراءة InBody":"قراءة جديدة"}</h2>${!editing?`<div class="row"><button class="btn" id="ibEdit">عدّل آخر قراءة</button><button class="btn primary" id="ibNew">📷 ضيف قراءة جديدة</button></div>`:""}</div>
    ${editing||window._ibEdit?`
    <div class="scanbox"><div><b>📷 صوّر ورقة InBody</b><div class="muted small">Claude هيقرا كل الأرقام ويملاها تحت، وانت تراجع وتحفظ.</div></div>
-    <div class="row"><label class="btn primary" for="ibScanIn">صوّر / اختار الورقة</label><input id="ibScanIn" type="file" accept="image/*" capture="environment" class="vh"><span class="small muted" id="ibScanSt"></span></div>
+    <div class="row"><label class="btn primary" for="ibScanIn">📷 صوّر</label><input id="ibScanIn" type="file" accept="image/*" capture="environment" class="vh"><label class="btn" for="ibGalIn">🖼️ من الاستوديو</label><input id="ibGalIn" type="file" accept="image/*" class="vh"><span class="small muted" id="ibScanSt"></span></div>
     <div id="ibScanOut"></div></div>
    ${ibForm(window._ibEdit?ib:(S.example?ib:null))}
    <div class="row"><button class="btn primary" id="saveMe">احفظ ورتّب البرنامج</button><button class="btn ghost" id="ibCancel"${editing&&!window._ibEdit&&!window._ibNew?" hidden":""}>إلغاء</button><span class="small muted" id="meStatus"></span></div>`:`<p class="muted small">آخر قراءة محفوظة فوق. لما تعمل قياس جديد، دوس «ضيف قراءة جديدة» واكتب أرقام الورقة في نفس الأقسام.</p>`}
@@ -908,7 +908,7 @@ function machineResultHTML(r){
 function vEquip(){
   const list=EQUIP.filter(e=>eqZone==="all"||e.zone===eqZone);
   return `<div class="panel"><h2>صوّر الجهاز</h2><p class="muted small">صوّر أي جهاز في الجيم، وهيقولك اسمه، وبيشتغل على أنهي عضلة، وإزاي تستخدمه، والتمارين اللي عليه.</p>
-   <div class="drop"><img id="eqPrev" ${eqFile?`src="${URL.createObjectURL(eqFile)}"`:"hidden"} alt="صورة الجهاز"><label class="btn primary" for="eqFileIn">📷 صوّر / اختار صورة</label><input id="eqFileIn" type="file" accept="image/*" capture="environment" class="vh"><span class="muted small">صوّر الجهاز كله، ومن غير ناس قدامه لو ينفع</span></div>
+   <div class="drop"><img id="eqPrev" ${eqFile?`src="${URL.createObjectURL(eqFile)}"`:"hidden"} alt="صورة الجهاز"><div class="row" style="justify-content:center"><label class="btn primary" for="eqFileIn">📷 صوّر</label><input id="eqFileIn" type="file" accept="image/*" capture="environment" class="vh"><label class="btn" for="eqGalIn">🖼️ من الاستوديو</label><input id="eqGalIn" type="file" accept="image/*" class="vh"></div><span class="muted small">صوّر الجهاز كله، ومن غير ناس قدامه لو ينفع</span></div>
    <div class="row"><button class="btn primary" id="eqGo"${eqFile?"":" disabled"}>اعرف الجهاز</button><span class="small muted" id="eqStatus"></span></div>
    <div id="eqOut">${eqResult?machineResultHTML(eqResult):""}</div></div>
   <div class="panel"><div class="row between"><h2>كتالوج الأجهزة</h2><span class="muted small">${EQUIP.length} جهاز</span></div>
@@ -923,7 +923,7 @@ async function eqImageB64(file){
   return c.toDataURL("image/jpeg",0.85).split(",")[1];
 }
 const EQERR={not_configured:"التعرّف بالصور لسه مش متفعّل على السيرفر. اختار الجهاز من الكتالوج تحت.",limit:"خلّصت عدد الصور المسموح النهارده. جرّب بكرة، أو اختار من الكتالوج.",unauthorized:"اعمل خروج ودخول تاني وجرّب.",bad_image:"الصورة دي مش نافعة، جرّب صورة تانية.",upstream:"خدمة التعرّف مش بترد دلوقتي، جرّب كمان شوية.",parse:"الرد جه بشكل غلط، جرّب تاني.",network:"مفيش نت. اختار الجهاز من الكتالوج تحت."};
-document.addEventListener("change",e=>{if(e.target.id!=="eqFileIn")return;eqFile=e.target.files&&e.target.files[0];eqResult=null;if(eqFile)render();});
+document.addEventListener("change",e=>{if(e.target.id!=="eqFileIn"&&e.target.id!=="eqGalIn")return;eqFile=e.target.files&&e.target.files[0];eqResult=null;if(eqFile)render();});
 document.addEventListener("click",async e=>{
   const z=e.target.closest("[data-eqz]");if(z){eqZone=z.dataset.eqz;render();return;}
   const o=e.target.closest("[data-eq-open]");if(o){openEquip(o.dataset.eqOpen);return;}
@@ -959,7 +959,7 @@ function fillFromSheet(r){
   return got;
 }
 document.addEventListener("change",async e=>{
-  if(e.target.id!=="ibScanIn")return;const f=e.target.files&&e.target.files[0];if(!f)return;
+  if(e.target.id!=="ibScanIn"&&e.target.id!=="ibGalIn")return;const f=e.target.files&&e.target.files[0];if(!f)return;
   const st=document.getElementById("ibScanSt"),out=document.getElementById("ibScanOut");
   st.innerHTML=`<span class="spinner"></span> Claude بيقرا الورقة… (10–30 ثانية)`;out.innerHTML="";
   try{
