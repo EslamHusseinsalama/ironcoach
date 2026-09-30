@@ -4,8 +4,8 @@
  "description": "برنامج الجيم بتاعك على أرقام InBody",
  "lang": "ar",
  "dir": "rtl",
- "start_url": "/",
- "scope": "/",
+ "start_url": "./",
+ "scope": "./",
  "display": "standalone",
  "orientation": "portrait",
  "background_color": "#EDEFF2",
@@ -30,5 +30,5 @@
    "purpose": "maskable"
   }
  ],
- "id": "/"
+ "id": "./"
 }

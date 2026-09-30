@@ -1105,6 +1105,6 @@ document.getElementById("acctBtn").addEventListener("click",openAccount);
   let who=null;try{who=await Backend.current();}catch(e){}
   if(who)await enterApp(who,false);else showAuth();
 })();
-if("serviceWorker" in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});}
+if("serviceWorker" in navigator&&location.protocol!=="file:"){navigator.serviceWorker.register("sw.js",{scope:"./"}).catch(()=>{});}
 
 })();
