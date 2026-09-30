@@ -1,7 +1,7 @@
 // Offline cache for the app shell. Bump VERSION on every deploy.
-const VERSION="ironcoach-v10";
+const VERSION="ironcoach-v11";
 const BASE=self.registration.scope; // works at "/" (Netlify) and "/ironcoach/" (GitHub Pages)
-const SHELL=["","style.css","app.js","config.js","vendor/supabase.js","manifest.webmanifest","icons/icon-192.png","icons/icon-512.png"].map(p=>new URL(p,BASE).href);
+const SHELL=["","style.css","app.js","config.js","vendor/supabase.js","manifest.webmanifest","icons/v2/icon-192.png","icons/v2/icon-512.png"].map(p=>new URL(p,BASE).href);
 self.addEventListener("install",e=>{
   // cache each file on its own so one failure never blocks installing the app
   e.waitUntil(caches.open(VERSION).then(c=>Promise.all(SHELL.map(u=>c.add(u).catch(()=>{})))).then(()=>self.skipWaiting()));

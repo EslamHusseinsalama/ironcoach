@@ -615,7 +615,7 @@ function buzz(p){if(settings().vibrate&&navigator.vibrate)try{navigator.vibrate(
 async function keepAwake(on){try{if(on&&"wakeLock" in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request("screen");wakeLock.addEventListener("release",()=>{wakeLock=null;});}
   if(!on&&wakeLock){await wakeLock.release();wakeLock=null;}}catch(e){}}
 function notify(title,body){try{if(!("Notification" in window)||Notification.permission!=="granted"||!document.hidden)return;
-  navigator.serviceWorker&&navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification(title,{body,icon:"icons/icon-192.png",badge:"icons/icon-192.png",tag:"ironcoach-rest",renotify:true,vibrate:[250,120,250]});else new Notification(title,{body});});}catch(e){}}
+  navigator.serviceWorker&&navigator.serviceWorker.getRegistration().then(r=>{if(r)r.showNotification(title,{body,icon:"icons/v2/icon-192.png",badge:"icons/v2/icon-192.png",tag:"ironcoach-rest",renotify:true,vibrate:[250,120,250]});else new Notification(title,{body});});}catch(e){}}
 
 /* ---------- session ---------- */
 function sessDay(){const s=S.session;return s&&S.plan&&S.plan.days[s.day]?S.plan.days[s.day]:null;}
@@ -1040,7 +1040,7 @@ function localBackend(){
 const Backend=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?supabaseBackend():localBackend();
 
 function authView(mode){
-  return `<div class="authcard"><div class="brandbig"><img class="applogo big" src="icons/icon-192.png" alt=""><h1>الكوتش</h1><p class="muted">برنامج الجيم بتاعك على أرقام InBody</p></div>
+  return `<div class="authcard"><div class="brandbig"><img class="applogo big" src="icons/v2/icon-192.png" alt=""><h1>الكوتش</h1><p class="muted">برنامج الجيم بتاعك على أرقام InBody</p></div>
   <div class="seg2" role="tablist"><button data-auth="login" aria-selected="${mode==="login"}">دخول</button><button data-auth="register" aria-selected="${mode==="register"}">حساب جديد</button></div>
   <form id="authForm" class="authform" autocomplete="on" novalidate>
    <div class="field"><label for="a_user">اسم المستخدم (Username)</label><input id="a_user" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" dir="ltr" required></div>

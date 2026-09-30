@@ -7,8 +7,8 @@
 <meta name="description" content="برنامج الجيم بتاعك: جدول التمرين، خريطة العضلات، وتحليل InBody">
 <meta name="theme-color" content="#0B0B0C">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png"><link rel="icon" type="image/svg+xml" href="icons/logo.svg">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/v2/icon-192.png"><link rel="icon" type="image/svg+xml" href="icons/logo.svg">
+<link rel="apple-touch-icon" href="icons/v2/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -18,6 +18,9 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Reem+Kufi:wght@600;700&display=swap">
 <link rel="stylesheet" href="style.css">
 <style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+<script>
+window.__bip=null;addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__bip=e;window.__showInstall&&window.__showInstall();});
+</script>
 </head>
 <body>
 <div id="auth" hidden></div>
@@ -25,7 +28,7 @@
  <div id="shell" hidden>
   <header class="top">
     <div class="brand">
-      <div class="logo"><img class="applogo" src="icons/icon-192.png" alt=""><div><h1>الكوتش</h1><div class="sync" id="sync"></div></div></div>
+      <div class="logo"><img class="applogo" src="icons/v2/icon-192.png" alt=""><div><h1>الكوتش</h1><div class="sync" id="sync"></div></div></div>
       <button class="userbtn" id="acctBtn" type="button"><span aria-hidden="true">●</span><span id="who" dir="ltr"></span></button>
     </div>
     <nav class="tabs" role="tablist" id="tabs">
@@ -46,5 +49,22 @@
 <script src="config.js"></script>
 <script src="vendor/supabase.js"></script>
 <script src="app.js"></script>
+<div id="installBar" class="installbar" hidden><img src="icons/v2/icon-192.png" alt=""><div><b>ثبّت «الكوتش» كتطبيق</b><div class="small" id="installHint">يفتح لوحده من غير متصفح ويشتغل أوفلاين</div></div><button class="btn primary" id="installBtn" type="button">ثبّت</button><button class="btn ghost" id="installX" type="button" aria-label="اقفل">✕</button></div>
+<script>
+(function(){
+  var bar=document.getElementById("installBar"),btn=document.getElementById("installBtn"),hint=document.getElementById("installHint");
+  var standalone=matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  var closed=false;try{closed=sessionStorage.getItem("instX")==="1"}catch(e){}
+  if(standalone||closed)return;
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  window.__showInstall=function(){btn.hidden=false;hint.textContent="يفتح لوحده من غير متصفح ويشتغل أوفلاين";bar.hidden=false;};
+  if(window.__bip)window.__showInstall();
+  else setTimeout(function(){if(window.__bip)return;btn.hidden=true;
+    hint.textContent=ios?"من سفاري: دوس زرار المشاركة ⬆️ ← «Add to Home Screen»":"من قايمة كروم ⋮ ← «تثبيت التطبيق» أو «Add to Home screen» ← «Install»";bar.hidden=false;},3500);
+  btn.onclick=function(){if(!window.__bip)return;window.__bip.prompt();window.__bip.userChoice.then(function(){window.__bip=null;bar.hidden=true;});};
+  document.getElementById("installX").onclick=function(){bar.hidden=true;try{sessionStorage.setItem("instX","1")}catch(e){}};
+  addEventListener("appinstalled",function(){bar.hidden=true;});
+})();
+</script>
 </body>
 </html>
