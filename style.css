@@ -276,3 +276,6 @@ body.insession{overflow:hidden}
 
 .scanbox{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:12px}
 input.filled,select.filled{border-color:var(--ok)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--ok) 25%,transparent)}
+
+.applogo{width:38px;height:38px;border-radius:10px;display:block}
+.applogo.big{width:76px;height:76px;border-radius:18px;margin-inline:auto}

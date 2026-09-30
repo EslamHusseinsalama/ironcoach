@@ -797,12 +797,12 @@ function buildICS(){
   const st=settings(),o=orderedDays(),mins=+S.profile.minutes||60;const now=new Date();const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//IronCoach//AR","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
   o.forEach((wd,k)=>{const d=S.plan.days[k%S.plan.days.length];const s=nextDate(wd,st.remTime),e=new Date(s.getTime()+mins*60000);
     L.push("BEGIN:VEVENT","UID:ironcoach-"+ICSDAY[wd]+"-"+(USER?USER.username:"me")+"@ironcoach","DTSTAMP:"+icsT(now),"DTSTART:"+icsT(s),"DTEND:"+icsT(e),"RRULE:FREQ=WEEKLY;BYDAY="+ICSDAY[wd],
-      "SUMMARY:🏋️ تمرين: "+d.title,"DESCRIPTION:"+d.focus+" — افتح كوتش الحديد ودوس ابدأ التمرين","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:ميعاد التمرين","TRIGGER:-PT"+(+st.remBefore||0)+"M","END:VALARM","END:VEVENT");});
+      "SUMMARY:🏋️ تمرين: "+d.title,"DESCRIPTION:"+d.focus+" — افتح الكوتش ودوس ابدأ التمرين","BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:ميعاد التمرين","TRIGGER:-PT"+(+st.remBefore||0)+"M","END:VALARM","END:VEVENT");});
   L.push("END:VCALENDAR");return L.join("\r\n");
 }
 function googleCalURL(){
   const st=settings(),o=orderedDays();if(!o.length)return "#";const s=nextDate(o[0],st.remTime),e=new Date(s.getTime()+(+S.profile.minutes||60)*60000);
-  const q=new URLSearchParams({action:"TEMPLATE",text:"🏋️ تمرين — كوتش الحديد",details:"افتح كوتش الحديد ودوس «ابدأ التمرين»",dates:icsT(s)+"/"+icsT(e),ctz:Intl.DateTimeFormat().resolvedOptions().timeZone||"Africa/Cairo",recur:"RRULE:FREQ=WEEKLY;BYDAY="+o.map(d=>ICSDAY[d]).join(",")});
+  const q=new URLSearchParams({action:"TEMPLATE",text:"🏋️ تمرين — الكوتش",details:"افتح الكوتش ودوس «ابدأ التمرين»",dates:icsT(s)+"/"+icsT(e),ctz:Intl.DateTimeFormat().resolvedOptions().timeZone||"Africa/Cairo",recur:"RRULE:FREQ=WEEKLY;BYDAY="+o.map(d=>ICSDAY[d]).join(",")});
   return "https://calendar.google.com/calendar/render?"+q.toString();
 }
 function vReminders(){
@@ -1040,7 +1040,7 @@ function localBackend(){
 const Backend=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?supabaseBackend():localBackend();
 
 function authView(mode){
-  return `<div class="authcard"><div class="brandbig"><div class="plate">20</div><h1>كوتش الحديد</h1><p class="muted">برنامج الجيم بتاعك على أرقام InBody</p></div>
+  return `<div class="authcard"><div class="brandbig"><img class="applogo big" src="icons/icon-192.png" alt=""><h1>الكوتش</h1><p class="muted">برنامج الجيم بتاعك على أرقام InBody</p></div>
   <div class="seg2" role="tablist"><button data-auth="login" aria-selected="${mode==="login"}">دخول</button><button data-auth="register" aria-selected="${mode==="register"}">حساب جديد</button></div>
   <form id="authForm" class="authform" autocomplete="on" novalidate>
    <div class="field"><label for="a_user">اسم المستخدم (Username)</label><input id="a_user" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" dir="ltr" required></div>
@@ -1095,7 +1095,7 @@ function openAccount(){
   document.getElementById("expBtn").onclick=()=>{const b=new Blob([JSON.stringify(S,null,1)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="ironcoach-"+USER.username+"-"+today()+".json";document.body.appendChild(a);a.click();a.remove();};
   document.getElementById("impFile").onchange=async e=>{const m=document.getElementById("impMsg");const f=e.target.files[0];if(!f)return;
     try{const d=JSON.parse(await f.text());if(!d||typeof d!=="object"||!d.profile)throw 0;S=normalize(d);ensurePlan();persist();render();m.textContent="البيانات رجعت ✓ ("+S.inbody.length+" قياس)";}
-    catch(err){m.textContent="الملف ده مش نسخة من كوتش الحديد.";}};
+    catch(err){m.textContent="الملف ده مش نسخة من الكوتش.";}};
   document.getElementById("logoutBtn").onclick=async()=>{await Backend.signOut();clearTimeout(saveTimer);clearInterval(sessTick);document.getElementById("session").hidden=true;document.body.classList.remove("insession");keepAwake(false);USER=null;S=emptyState();d.close();authMode="login";showAuth();};
 }
 document.getElementById("acctBtn").addEventListener("click",openAccount);
