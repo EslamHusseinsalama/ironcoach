@@ -273,3 +273,6 @@ body.insession{overflow:hidden}
 .eqcard b{font-size:.9rem}
 .eqcard:hover{border-color:var(--accent)}
 .eqex{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+
+.scanbox{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--accent);background:var(--accent-soft);border-radius:var(--r);padding:12px}
+input.filled,select.filled{border-color:var(--ok)!important;box-shadow:0 0 0 2px color-mix(in srgb,var(--ok) 25%,transparent)}

@@ -487,8 +487,11 @@ function vMe(){
    ${sel("p_goal","هدفك",pr.goal,Object.entries(GOALS))}${f("p_min","وقت التمرين",pr.minutes,"number","دقيقة")}
    <div class="field" style="grid-column:1/-1"><label for="p_inj">إصابات أو حاجات لازم تتجنبها</label><input id="p_inj" type="text" value="${esc(pr.injuries)}" placeholder="مثلاً: وجع في الركبة الشمال"></div>
   </div><div class="row"><button class="btn" id="saveProfile">احفظ معلوماتي</button></div></div>
-  <div class="panel"><div class="row between"><h2>${editing?"قراءة InBody":"قراءة جديدة"}</h2>${!editing?`<div class="row"><button class="btn" id="ibEdit">عدّل آخر قراءة</button><button class="btn primary" id="ibNew">ضيف قراءة جديدة</button></div>`:""}</div>
+  <div class="panel"><div class="row between"><h2>${editing?"قراءة InBody":"قراءة جديدة"}</h2>${!editing?`<div class="row"><button class="btn" id="ibEdit">عدّل آخر قراءة</button><button class="btn primary" id="ibNew">📷 ضيف قراءة جديدة</button></div>`:""}</div>
    ${editing||window._ibEdit?`
+   <div class="scanbox"><div><b>📷 صوّر ورقة InBody</b><div class="muted small">Claude هيقرا كل الأرقام ويملاها تحت، وانت تراجع وتحفظ.</div></div>
+    <div class="row"><label class="btn primary" for="ibScanIn">صوّر / اختار الورقة</label><input id="ibScanIn" type="file" accept="image/*" capture="environment" class="vh"><span class="small muted" id="ibScanSt"></span></div>
+    <div id="ibScanOut"></div></div>
    ${ibForm(window._ibEdit?ib:(S.example?ib:null))}
    <div class="row"><button class="btn primary" id="saveMe">احفظ ورتّب البرنامج</button><button class="btn ghost" id="ibCancel"${editing&&!window._ibEdit&&!window._ibNew?" hidden":""}>إلغاء</button><span class="small muted" id="meStatus"></span></div>`:`<p class="muted small">آخر قراءة محفوظة فوق. لما تعمل قياس جديد، دوس «ضيف قراءة جديدة» واكتب أرقام الورقة في نفس الأقسام.</p>`}
   </div>
@@ -545,6 +548,7 @@ function saveMe(){
   if(rec.bmi==null&&S.profile.height)rec.bmi=+(rec.weight/Math.pow(S.profile.height/100,2)).toFixed(1);
     const i=S.inbody.findIndex(x=>x.date===rec.date);
   if(i>=0){["impedance"].forEach(k=>{if(S.inbody[i][k]&&!rec[k])rec[k]=S.inbody[i][k];});S.inbody[i]=rec;}else S.inbody.push(rec);
+  (window._ibHist||[]).forEach(h=>{if(h&&h.date&&h.weight&&!S.inbody.some(x=>x.date===h.date))S.inbody.push(h);});window._ibHist=null;
   S.inbody.sort((a,b)=>a.date<b.date?-1:1);
   window._ibNew=window._ibEdit=false;
   S.plan=buildPlan(S.profile,latestIB(),orderedDays().length);
@@ -932,6 +936,40 @@ document.addEventListener("click",async e=>{
     eqResult=res.result;render();
     const s2=document.getElementById("eqStatus");if(s2&&res.left!=null)s2.textContent=`باقيلك ${res.left} صورة النهارده`;
   }catch(err){st.textContent=EQERR[err&&err.code]||EQERR.upstream;g.disabled=false;}
+});
+
+/* ---------- InBody sheet reading (Claude via Supabase function) ---------- */
+async function sheetB64(file){
+  const bmp=await createImageBitmap(file);const sc=Math.min(1,1800/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.9).split(",")[1];
+}
+function fillFromSheet(r){
+  const n=v=>v==null||v===""||isNaN(+v)?null:+v;let got=0;
+  const set=(id,v)=>{const el=document.getElementById(id);if(el&&v!=null&&v!==""){el.value=v;el.classList.add("filled");got++;}};
+  Object.keys(IBF).forEach(k=>set("f_"+k,n(r[k])));
+  if(r.date&&/^\d{4}-\d{2}-\d{2}$/.test(r.date))set("f_date",r.date);
+  if(r.time&&/^\d{1,2}:\d{2}$/.test(r.time))set("f_time",r.time.padStart(5,"0"));
+  set("f_idno",r.idno||null);set("f_device",r.device||null);
+  set("p_age",n(r.age));set("p_height",n(r.height));if(r.sex==="male"||r.sex==="female"){const el=document.getElementById("p_sex");if(el)el.value=r.sex;}
+  const R=r.ranges||{};Object.keys(R).forEach(k=>{if(RANGED.has(k)&&Array.isArray(R[k])&&R[k].length===2){set("r_"+k+"_lo",n(R[k][0]));set("r_"+k+"_hi",n(R[k][1]));}});
+  const segs=[["seg","sl_pct_"],["segKg","sl_kg_"],["segFat","sf_pct_"],["segFatKg","sf_kg_"]];
+  segs.forEach(([key,pre])=>{const o=r[key]||{};["la","ra","tr","ll","rl"].forEach(k=>set(pre+k,n(o[k])));});
+  window._ibHist=(Array.isArray(r.history)?r.history:[]).filter(h=>h&&h.date&&n(h.weight)).map(h=>{const w=n(h.weight),pbf=n(h.pbf);return {date:h.date,device:r.device||undefined,weight:w,smm:n(h.smm),pbf,bfm:pbf!=null?+(w*pbf/100).toFixed(1):null};});
+  return got;
+}
+document.addEventListener("change",async e=>{
+  if(e.target.id!=="ibScanIn")return;const f=e.target.files&&e.target.files[0];if(!f)return;
+  const st=document.getElementById("ibScanSt"),out=document.getElementById("ibScanOut");
+  st.innerHTML=`<span class="spinner"></span> Claude بيقرا الورقة… (10–30 ثانية)`;out.innerHTML="";
+  try{
+    const res=await Backend.identify({mode:"inbody",image:await sheetB64(f)});const r=res.result||{};
+    if(r.is_inbody===false){st.textContent="";out.innerHTML=`<div class="banner">الصورة دي مش شبه ورقة InBody. صوّر الورقة كلها وهي مفرودة وفي نور كويس.</div>`;return;}
+    const got=fillFromSheet(r);st.textContent="";
+    const hist=(window._ibHist||[]).filter(h=>!S.inbody.some(x=>x.date===h.date));
+    out.innerHTML=`<div class="banner" style="border-style:solid;border-color:var(--ok)">اتقرا <b>${got}</b> رقم ومتعلّم عليهم بالأخضر تحت — راجعهم مع الورقة وبعدين دوس «احفظ ورتّب البرنامج».${hist.length?`<br>ولقيت ${hist.length} قياس قديم في جدول الورقة هيتضافوا لسجلك.`:""}${r.unclear?`<br><span class="muted">${esc(r.unclear)}</span>`:""}${res.left!=null?`<br><span class="muted small">باقيلك ${res.left} صورة النهارده</span>`:""}</div>`;
+  }catch(err){st.textContent=(EQERR[err&&err.code]||EQERR.upstream).replace("اختار الجهاز من الكتالوج تحت.","اكتب الأرقام بإيدك تحت.");}
+  e.target.value="";
 });
 
 /* ---------- accounts & storage ---------- */

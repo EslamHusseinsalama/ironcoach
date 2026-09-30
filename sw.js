@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION on every deploy.
-const VERSION="ironcoach-v6";
+const VERSION="ironcoach-v7";
 const SHELL=["/","/style.css","/app.js","/config.js","/vendor/supabase.js","/manifest.webmanifest","/icons/icon-192.png","/icons/icon-512.png"];
 self.addEventListener("install",e=>{
   // cache each file on its own so one failure never blocks installing the app
