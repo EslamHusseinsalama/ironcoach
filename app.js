@@ -498,7 +498,7 @@ function vMe(){
 /* ---------- render & events ---------- */
 function render(){
   const v=document.getElementById("view");
-  v.innerHTML=tab==="today"?vToday():tab==="plan"?vPlan()+vReminders():tab==="lib"?vLib():tab==="prog"?vProgress():vMe();
+  v.innerHTML=tab==="today"?vToday():tab==="plan"?vPlan()+vReminders():tab==="lib"?vLib():tab==="prog"?vProgress():tab==="equip"?vEquip():vMe();
   document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.tab===tab?"true":"false"));
 }
 document.getElementById("tabs").addEventListener("click",e=>{const b=e.target.closest("button[data-tab]");if(!b)return;tab=b.dataset.tab;render();window.scrollTo({top:0});});
@@ -826,6 +826,114 @@ document.addEventListener("click",e=>{const b=e.target.closest("[data-rem]");if(
   if(b.dataset.rem==="ics"){const blob=new Blob([buildICS()],{type:"text/calendar"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="ironcoach-mawa3eed.ics";document.body.appendChild(a);a.click();a.remove();toast("اتنزّل ملف المواعيد — افتحه وضيفه للتقويم");}
 });
 
+/* ================= gym equipment: photo recognition (Claude via Supabase function) + catalog ================= */
+const EQZ={chest:"صدر",back:"ضهر",shoulders:"كتف",arms:"دراع",legs:"رجل",core:"بطن وضهر سفلي",multi:"أجهزة متعددة",free:"أوزان حرة",cardio:"كارديو"};
+const Q=(id,ar,en,zone,img,what,ex,x,p,s)=>({id,ar,en,zone,img,what,ex,x,p,s});
+const EQUIP=[
+Q("chest_press_m","جهاز تشيست برس","Chest Press Machine","chest","Leverage_Chest_Press","بتقعد وتدفع المسكات لقدام. بيشتغل على الصدر بأمان من غير ما تحتاج حد يسندك.",["chest_press_machine"],["Leverage_Incline_Chest_Press","Leverage_Decline_Chest_Press"],["chest"],["front_delts","triceps"]),
+Q("pec_deck_m","جهاز الفراشة (بيك دك)","Pec Deck / Fly Machine","chest","Butterfly","بتقفّل دراعك قدامك بحركة نص دايرة للصدر. ولو قعدت بالعكس وفتحت لورا بيشتغل على الكتف الخلفي.",["pec_deck","reverse_pec_deck"],["Butterfly","Reverse_Machine_Flyes"],["chest"],["front_delts","rear_delts"]),
+Q("cable_station","محطة الكابل (كروس أوفر)","Cable Crossover Station","multi","Cable_Crossover","بكرتين بارتفاع بيتغير. من أكتر الأجهزة اللي عليها تمارين: صدر وتراي وباي وكتف وبطن.",["cable_fly","cable_pushdown","cable_curl","face_pull","cable_lateral","cable_crunch","cable_woodchop"],["Low_Cable_Crossover","Cable_Rear_Delt_Fly"],["chest"],["triceps","biceps","side_delts","abs"]),
+Q("lat_pulldown_m","جهاز السحب العالي (لات بول داون)","Lat Pulldown Machine","back","Wide-Grip_Lat_Pulldown","بتقعد وتسحب البار من فوق لصدرك. بيعرّض الضهر، وبديل ممتاز للعقلة.",["lat_pulldown"],["Close-Grip_Front_Lat_Pulldown","One_Arm_Lat_Pulldown"],["lats"],["biceps","rear_delts","traps"]),
+Q("seated_row_m","جهاز السحب الأرضي (سيتد رو)","Seated Cable Row","back","Seated_Cable_Rows","بتقعد ورجلك على المسند وتسحب المسكة لبطنك. بيدّي سُمك للضهر.",["seated_row"],["Seated_Cable_Rows"],["lats","traps"],["biceps","rear_delts"]),
+Q("row_machine","جهاز رو (صدرك على المسند)","Chest-Supported Row Machine","back","Leverage_Iso_Row","صدرك على المسند وبتسحب لورا. بيشتغل على الضهر من غير ضغط على أسفل الضهر.",["machine_row"],["Leverage_High_Row","Leverage_Iso_Row"],["lats","traps"],["biceps","rear_delts"]),
+Q("tbar_row","تي بار رو","T-Bar Row","back","T-Bar_Row_with_Handle","بار متثبت من ناحية وبتسحبه وانت منحني. بيدّي سُمك قوي للضهر.",["barbell_row"],["T-Bar_Row_with_Handle","Lying_T-Bar_Row"],["lats","traps"],["biceps","lower_back"]),
+Q("assisted_pull","جهاز العقلة والمتوازي المساعد","Assisted Pull-up / Dip Machine","back","Dip_Machine","بتركع على مسند بيشيل جزء من وزنك، عشان تعرف تعمل عقلة ومتوازي لو لسه مش قادر بوزنك كله.",["pull_up","dips"],["Dip_Machine","Band_Assisted_Pull-Up"],["lats","triceps"],["biceps","chest"]),
+Q("pullup_bar","بار العقلة","Pull-up Bar","back","Pullups","بار عالي تتعلّق فيه. للعقلة ولرفع الرجلين للبطن.",["pull_up","hanging_leg_raise"],["Pullups","Hanging_Leg_Raise"],["lats"],["biceps","abs","forearms"]),
+Q("dip_station","بار المتوازي","Dip Station","arms","Dips_-_Triceps_Version","بارين متوازيين. للمتوازي على التراي والصدر، ولرفع الرجلين.",["dips"],["Dips_-_Triceps_Version","Dips_-_Chest_Version"],["triceps"],["chest","front_delts"]),
+Q("shoulder_press_m","جهاز ضغط الكتف","Shoulder Press Machine","shoulders","Leverage_Shoulder_Press","بتقعد وتدفع المسكات لفوق راسك. للكتف الأمامي والجانبي.",["shoulder_press_machine"],["Leverage_Shoulder_Press"],["front_delts","side_delts"],["triceps"]),
+Q("smith","جهاز سميث","Smith Machine","multi","Smith_Machine_Bench_Press","بار ماشي على مسار ثابت. أأمن من البار الحر للسكوات والبنش والهيب ثرست.",["squat","bench_press","hip_thrust"],["Smith_Machine_Bench_Press","Smith_Machine_Bent_Over_Row","Smith_Machine_Calf_Raise"],["quads","chest"],["glutes","triceps"]),
+Q("power_rack","قفص السكوات (باور راك)","Power Rack / Squat Rack","free","Barbell_Squat","قفص فيه حوامل للبار. للسكوات والضغط والسحب بالبار الحر بأمان.",["squat","romanian_deadlift","barbell_row"],["Barbell_Squat","Front_Barbell_Squat"],["quads","glutes"],["hamstrings","lower_back"]),
+Q("flat_bench_bar","بنش بريس","Bench Press Station","chest","Barbell_Bench_Press_-_Medium_Grip","بنش مستوي عليه حوامل للبار. للبنش بريس.",["bench_press"],["Barbell_Bench_Press_-_Medium_Grip"],["chest"],["front_delts","triceps"]),
+Q("adj_bench","بنش قابل للتعديل","Adjustable Bench","free","Incline_Dumbbell_Press","بنش بيتظبط مستوي أو مايل. أغلب تمارين الدمبلز بتتعمل عليه.",["incline_db_press","db_fly","db_row","db_shoulder_press","bench_dip","bulgarian"],["Incline_Dumbbell_Flyes"],["chest"],["front_delts","triceps","lats"]),
+Q("preacher","بنش الباي (بريتشر)","Preacher Curl Bench","arms","Preacher_Curl","مسند مايل تحط عليه دراعك. بيعزل الباي ويمنعك تغش بجسمك.",["barbell_curl"],["Preacher_Curl","Machine_Preacher_Curls"],["biceps"],["forearms"]),
+Q("leg_press_m","جهاز ليج برس","Leg Press Machine","legs","Leg_Press","بتدفع منصة برجلك وانت قاعد. للفخذ الأمامي والمؤخرة، وأأمن من السكوات لضهرك.",["leg_press"],["Narrow_Stance_Leg_Press","Calf_Press_On_The_Leg_Press_Machine"],["quads","glutes"],["adductors","hamstrings"]),
+Q("hack_squat_m","جهاز هاك سكوات","Hack Squat Machine","legs","Hack_Squat","سكوات وضهرك مسنود على مسند مايل. بيركّز على الفخذ الأمامي.",["squat"],["Hack_Squat","Narrow_Stance_Hack_Squats"],["quads"],["glutes"]),
+Q("leg_ext_m","جهاز رفرفة أمامي (ليج إكستنشن)","Leg Extension Machine","legs","Leg_Extensions","بتقعد وتفرد رجلك لقدام. بيعزل الفخذ الأمامي.",["leg_extension"],["Single-Leg_Leg_Extension"],["quads"],[]),
+Q("lying_curl_m","جهاز رفرفة خلفي (نايم)","Lying Leg Curl Machine","legs","Lying_Leg_Curls","بتنام على بطنك وتثني رجلك لورا. للفخذ الخلفي.",["leg_curl"],["Lying_Leg_Curls"],["hamstrings"],["calves"]),
+Q("seated_curl_m","جهاز رفرفة خلفي (قاعد)","Seated Leg Curl Machine","legs","Seated_Leg_Curl","بتقعد وتثني رجلك لتحت. للفخذ الخلفي.",["leg_curl"],["Seated_Leg_Curl"],["hamstrings"],[]),
+Q("calf_m","جهاز السمانة","Calf Raise Machine","legs","Standing_Calf_Raises","بترفع كعبك وانت شايل وزن على كتفك أو ركبتك. للسمانة.",["calf_raise_machine"],["Standing_Calf_Raises","Barbell_Seated_Calf_Raise"],["calves"],[]),
+Q("abductor_m","جهاز أبدكتور (خارج الفخذ)","Hip Abductor Machine","legs","Thigh_Abductor","بتقعد وتفتح رجلك لبرّه. للمؤخرة من الجنب.",["hip_abductor"],["Thigh_Abductor"],["glutes"],[]),
+Q("adductor_m","جهاز أدكتور (داخل الفخذ)","Hip Adductor Machine","legs","Thigh_Adductor","بتقعد وتقفّل رجلك لجوه. لعضلات داخل الفخذ.",["hip_adductor"],["Thigh_Adductor"],["adductors"],[]),
+Q("glute_ham","جهاز الجلوت هام","Glute-Ham Developer","legs","Glute_Ham_Raise","رجلك متثبتة وبتنزل بجسمك لقدام وترجع. للفخذ الخلفي والمؤخرة.",["back_extension"],["Glute_Ham_Raise"],["hamstrings","glutes"],["lower_back"]),
+Q("back_ext","بنش الظهر السفلي (هايبر)","Back Extension Bench","core","Hyperextensions_Back_Extensions","وسطك على المسند ورجلك متثبتة. لأسفل الضهر والمؤخرة.",["back_extension"],["Hyperextensions_Back_Extensions"],["lower_back"],["glutes","hamstrings"]),
+Q("ab_crunch_m","جهاز البطن","Ab Crunch Machine","core","Ab_Crunch_Machine","بتقعد وتنحني لقدام ضد مقاومة. للبطن.",["crunch","cable_crunch"],["Ab_Crunch_Machine"],["abs"],["obliques"]),
+Q("dumbbells","الدمبلز","Dumbbells","free","Dumbbell_Bicep_Curl","أوزان لكل إيد. ينفع معاها تمرين لأي عضلة تقريبًا.",["db_curl","hammer_curl","db_shoulder_press","lateral_raise","goblet_squat","db_rdl","walking_lunge","db_row"],[],["biceps","side_delts"],["quads","lats"]),
+Q("barbell","البار (الأولمبي)","Olympic Barbell","free","Barbell_Deadlift","بار طويل بتحط عليه طارات. للتمارين الأساسية التقيلة.",["deadlift","squat","bench_press","barbell_row","barbell_curl","romanian_deadlift","hip_thrust"],[],["hamstrings","quads","chest"],["lower_back","glutes"]),
+Q("kettlebell","الكيتل بل","Kettlebell","free","One-Arm_Kettlebell_Swings","وزن بمقبض. للسوينج والجوبلت سكوات وتمارين الحرق.",["goblet_squat"],["One-Arm_Kettlebell_Swings"],["glutes","hamstrings"],["lower_back","front_delts"]),
+Q("treadmill","السير (تريدميل)","Treadmill","cardio","Walking_Treadmill","للمشي أو الجري. المشي على ميل ممتاز للحرق ومريح للركبة.",["incline_walk"],["Walking_Treadmill","Running_Treadmill"],["calves","glutes"],["hamstrings","quads"]),
+Q("bike","العجلة الثابتة","Stationary Bike","cardio","Bicycling_Stationary","كارديو خفيف على الركبة. ينفع للإحماء أو الحرق.",["bike"],["Bicycling_Stationary"],["quads"],["calves","glutes"]),
+Q("elliptical","الإليبتكال","Elliptical Trainer","cardio","Elliptical_Trainer","كارديو بيحرّك الإيد والرجل مع بعض من غير خبط على المفاصل.",[],["Elliptical_Trainer"],["quads","glutes"],["calves","front_delts"]),
+Q("rower","جهاز التجديف","Rowing Machine","cardio","Rowing_Stationary","كارديو بيشغّل الجسم كله: رجل وضهر ودراع.",[],["Rowing_Stationary"],["lats","quads"],["biceps","hamstrings","traps"])
+];
+const EQBY=Object.fromEntries(EQUIP.map(e=>[e.id,e]));
+let eqZone="all",eqFile=null,eqResult=null;
+const eqImg=(e,n)=>"xdb/"+encodeURIComponent(e.img)+"/"+(n||0)+".jpg";
+function eqAnim(e,cls){return `<div class="anim ${cls||""}" role="img" aria-label="${esc(e.ar)}"><img src="${eqImg(e,0)}" alt="" loading="lazy"><img src="${eqImg(e,1)}" alt="" class="f2" loading="lazy"></div>`;}
+function exLinks(ids,xs){
+  const own=(ids||[]).map(id=>getEx(id)).filter(Boolean);
+  const ext=(xs||[]).map(x=>XDB?getEx("x:"+x):null).filter(Boolean);
+  const all=own.concat(ext);if(!all.length)return "";
+  return `<div class="eqex">${all.map(e=>`<button class="libcard" data-open="${esc(e.id)}">${frames(e)?`<img class="thumb" src="${frames(e)[0]}" alt="" loading="lazy">`:bodyMap(e.p,e.s,{caption:false})}<div><b${e.x?' dir="ltr"':""}>${esc(e.ar)}</b><span class="muted small">${e.p.map(m=>MUSCLES[m]).join("، ")}</span></div></button>`).join("")}</div>`;
+}
+function openEquip(id){
+  const e=EQBY[id];if(!e)return;
+  const show=()=>{document.getElementById("dlgBody").innerHTML=`<div class="row between"><div><h2>${esc(e.ar)}</h2><div class="en muted small" dir="ltr">${esc(e.en)}</div></div><button class="btn ghost" id="dlgX" aria-label="قفل">✕</button></div>
+    <div class="animbig">${eqAnim(e,"big")}</div><p>${esc(e.what)}</p>
+    ${bodyMap(e.p,e.s,{big:true})}${LEGEND}
+    <h3>تمارين على الجهاز ده</h3><p class="muted small">دوس على أي تمرين تشوف طريقة الأداء وتضيفه لبرنامجك.</p>${exLinks(e.ex,e.x)}`;
+    const d=document.getElementById("dlg");if(!d.open)d.showModal();document.getElementById("dlgX").onclick=()=>d.close();};
+  if(e.x&&e.x.length&&!XDB)loadXDB().then(show);else show();
+}
+function machineResultHTML(r){
+  if(r.is_equipment===false)return `<div class="banner">${esc(r.what_for||"مش شايف جهاز جيم في الصورة. صوّر الجهاز كله من بعيد شوية.")}</div>`;
+  const P=(r.primary||[]).filter(m=>MUSCLES[m]),Sx=(r.secondary||[]).filter(m=>MUSCLES[m]&&!P.includes(m));
+  const rel=(r.related||[]).filter(i=>BY[i]),alt=(r.no_machine_alt||[]).filter(i=>BY[i]);
+  const cat=r.catalog&&EQBY[r.catalog]?EQBY[r.catalog]:null;
+  const conf={high:["متأكد","ok"],medium:["غالبًا","warn"],low:["مش متأكد","bad"]}[r.confidence]||null;
+  return `<div class="idres"><div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+    <div class="row"><h2>${esc(r.name_ar||"")}</h2>${conf?`<span class="chip ${conf[1]}">${conf[0]}</span>`:""}</div><div class="en muted small" dir="ltr">${esc(r.name_en||"")}</div>
+    <p>${esc(r.what_for||"")}</p>
+    <div class="row" style="gap:4px">${P.map(m=>`<span class="chip hit">${MUSCLES[m]}</span>`).join("")}${Sx.map(m=>`<span class="chip hit2">${MUSCLES[m]}</span>`).join("")}</div>
+    ${(r.how_to||[]).length?`<div><h3>إزاي تستخدمه</h3><ol class="clean">${r.how_to.map(x=>`<li>${esc(x)}</li>`).join("")}</ol></div>`:""}
+    ${(r.mistakes||[]).length?`<div><h3>أخطاء شائعة</h3><ul class="clean">${r.mistakes.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:""}
+    ${cat?`<button class="btn" data-eq-open="${cat.id}">افتح «${esc(cat.ar)}» في الكتالوج</button>`:""}
+   </div><div>${bodyMap(P,Sx,{big:true})}${LEGEND}</div></div>
+   ${rel.length?`<h3>تمارين على الجهاز ده</h3>${exLinks(rel,[])}`:""}
+   ${alt.length?`<h3>بديل من غير جهاز</h3>${exLinks(alt,[])}`:""}`;
+}
+function vEquip(){
+  const list=EQUIP.filter(e=>eqZone==="all"||e.zone===eqZone);
+  return `<div class="panel"><h2>صوّر الجهاز</h2><p class="muted small">صوّر أي جهاز في الجيم، وهيقولك اسمه، وبيشتغل على أنهي عضلة، وإزاي تستخدمه، والتمارين اللي عليه.</p>
+   <div class="drop"><img id="eqPrev" ${eqFile?`src="${URL.createObjectURL(eqFile)}"`:"hidden"} alt="صورة الجهاز"><label class="btn primary" for="eqFileIn">📷 صوّر / اختار صورة</label><input id="eqFileIn" type="file" accept="image/*" capture="environment" class="vh"><span class="muted small">صوّر الجهاز كله، ومن غير ناس قدامه لو ينفع</span></div>
+   <div class="row"><button class="btn primary" id="eqGo"${eqFile?"":" disabled"}>اعرف الجهاز</button><span class="small muted" id="eqStatus"></span></div>
+   <div id="eqOut">${eqResult?machineResultHTML(eqResult):""}</div></div>
+  <div class="panel"><div class="row between"><h2>كتالوج الأجهزة</h2><span class="muted small">${EQUIP.length} جهاز</span></div>
+   <p class="muted small">مش معاك نت أو الصورة مش واضحة؟ اختار الجهاز اللي شبه اللي قدامك.</p>
+   <div class="filters">${[["all","الكل"]].concat(Object.entries(EQZ)).map(([k,v])=>`<button class="${eqZone===k?"on":""}" data-eqz="${k}">${v}</button>`).join("")}</div>
+   <div class="eqgrid">${list.map(e=>`<button class="eqcard" data-eq-open="${e.id}"><img src="${eqImg(e,0)}" alt="" loading="lazy"><b>${esc(e.ar)}</b><span class="muted small">${e.p.map(m=>MUSCLES[m]).join("، ")}</span></button>`).join("")}</div>
+   <p class="muted small">الصور من Free Exercise DB (ملكية عامة).</p></div>`;
+}
+async function eqImageB64(file){
+  const bmp=await createImageBitmap(file);const sc=Math.min(1,1280/Math.max(bmp.width,bmp.height));
+  const c=document.createElement("canvas");c.width=Math.round(bmp.width*sc);c.height=Math.round(bmp.height*sc);c.getContext("2d").drawImage(bmp,0,0,c.width,c.height);
+  return c.toDataURL("image/jpeg",0.85).split(",")[1];
+}
+const EQERR={not_configured:"التعرّف بالصور لسه مش متفعّل على السيرفر. اختار الجهاز من الكتالوج تحت.",limit:"خلّصت عدد الصور المسموح النهارده. جرّب بكرة، أو اختار من الكتالوج.",unauthorized:"اعمل خروج ودخول تاني وجرّب.",bad_image:"الصورة دي مش نافعة، جرّب صورة تانية.",upstream:"خدمة التعرّف مش بترد دلوقتي، جرّب كمان شوية.",parse:"الرد جه بشكل غلط، جرّب تاني.",network:"مفيش نت. اختار الجهاز من الكتالوج تحت."};
+document.addEventListener("change",e=>{if(e.target.id!=="eqFileIn")return;eqFile=e.target.files&&e.target.files[0];eqResult=null;if(eqFile)render();});
+document.addEventListener("click",async e=>{
+  const z=e.target.closest("[data-eqz]");if(z){eqZone=z.dataset.eqz;render();return;}
+  const o=e.target.closest("[data-eq-open]");if(o){openEquip(o.dataset.eqOpen);return;}
+  const g=e.target.closest("#eqGo");if(!g||!eqFile)return;
+  const st=document.getElementById("eqStatus");g.disabled=true;st.innerHTML=`<span class="spinner"></span> بيتعرّف على الجهاز… (ثواني)`;
+  try{
+    const img=await eqImageB64(eqFile);
+    const ids=LIB.map(x=>x.id+"|"+x.en+"|"+x.eq).join("\n");
+    const res=await Backend.identify({image:img,ids,muscles:Object.keys(MUSCLES).join(","),catalog:EQUIP.map(x=>x.id+"|"+x.en).join("\n")});
+    eqResult=res.result;render();
+    const s2=document.getElementById("eqStatus");if(s2&&res.left!=null)s2.textContent=`باقيلك ${res.left} صورة النهارده`;
+  }catch(err){st.textContent=EQERR[err&&err.code]||EQERR.upstream;g.disabled=false;}
+});
+
 /* ---------- accounts & storage ---------- */
 const CFG=window.IRONCOACH_CONFIG||{};
 const USERNAME_RE=/^[a-z0-9_.]{3,20}$/;
@@ -864,7 +972,12 @@ function supabaseBackend(){
     async signOut(){await sb.auth.signOut();},
     async changePassword(p){const {error}=await sb.auth.updateUser({password:p});if(error)throw error;},
     async load(id){const {data,error}=await sb.from("app_state").select("data").eq("user_id",id).maybeSingle();if(error)throw error;return data?data.data:null;},
-    async save(id,d){const {error}=await sb.from("app_state").upsert({user_id:id,data:d,updated_at:new Date().toISOString()});if(error)throw error;}
+    async save(id,d){const {error}=await sb.from("app_state").upsert({user_id:id,data:d,updated_at:new Date().toISOString()});if(error)throw error;},
+    async identify(body){
+      let res;try{res=await sb.functions.invoke("identify-equipment",{body});}catch(e){throw {code:"network"};}
+      const {data,error}=res;
+      if(error){let code="upstream";try{const j=await error.context.json();code=j.error||code;}catch(_){if(/fetch|network|send/i.test(String(error.message)))code=navigator.onLine?"not_configured":"network";}throw {code};}
+      if(!data||!data.ok)throw {code:(data&&data.error)||"upstream"};return data;}
   };
 }
 /* Demo mode: accounts live only in this browser (used until Supabase is configured). */
@@ -882,7 +995,8 @@ function localBackend(){
     async signOut(){localStorage.removeItem(SK);},
     async changePassword(p){const s=await this.current();const all=users();const salt=crypto.getRandomValues(new Uint32Array(4)).join("-");all[s.username].salt=salt;all[s.username].hash=await hash(p,salt);localStorage.setItem(K,JSON.stringify(all));},
     async load(id){try{return JSON.parse(localStorage.getItem("ironcoach-data:"+id)||"null");}catch(e){return null;}},
-    async save(id,d){localStorage.setItem("ironcoach-data:"+id,JSON.stringify(d));}
+    async save(id,d){localStorage.setItem("ironcoach-data:"+id,JSON.stringify(d));},
+    async identify(){throw {code:"not_configured"};}
   };
 }
 const Backend=(CFG.supabaseUrl&&CFG.supabaseAnonKey&&window.supabase)?supabaseBackend():localBackend();
