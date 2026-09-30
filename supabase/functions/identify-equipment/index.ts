@@ -18,7 +18,11 @@ Deno.serve(async (req) => {
   if (!key) return json({ error: "not_configured" }, 503);
 
   // only signed-in app users
-  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  let serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  if (!serviceKey) {
+    try { const k = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}"); serviceKey = k.default || Object.values(k)[0] as string || ""; } catch { /* ignore */ }
+  }
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, serviceKey, { auth: { persistSession: false } });
   const jwt = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "");
   const { data: u } = await admin.auth.getUser(jwt);
   if (!u?.user) return json({ error: "unauthorized" }, 401);
