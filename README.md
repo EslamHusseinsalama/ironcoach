@@ -1,4 +1,6 @@
-# كوتش الحديد — تطبيق (PWA)
+# الكوتش — تطبيق (PWA)
+
+اللينك: https://eslamhusseinsalama.github.io/ironcoach/ — ولأي نسخة من Claude: اقرا `CLAUDE.md` الأول.
 
 تطبيق ويب بيتثبّت على أندرويد وآيفون، وكل مستخدم له اسم مستخدم وباسورد وبياناته لوحده.
 
@@ -14,7 +16,7 @@
 2. SQL Editor ← الصق `supabase/schema.sql` ← Run.
 3. Authentication ← Sign In / Providers ← Email ← اقفل «Confirm email» واحفظ.
 4. Project Settings ← API Keys: انسخ Project URL والمفتاح anon (publishable) وحطهم في `config.js`.
-5. ارفع الفولدر ده كله على Netlify Drop (app.netlify.com/drop) أو أي استضافة ملفات ثابتة بـ HTTPS.
+5. النشر: GitHub Pages من فرع `main` (أي دفع على main بيتنشر لوحده).
 6. على الموبايل: أندرويد (Chrome ← القائمة ← Install app) — آيفون (Safari ← Share ← Add to Home Screen).
 
 ## ملاحظات
